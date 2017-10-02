@@ -1,0 +1,41 @@
+import imp
+import sys
+sys.modules["sqlite"] = imp.new_module("sqlite")
+sys.modules["sqlite3.dbapi2"] = imp.new_module("sqlite.dbapi2")
+from textblob import TextBlob
+import json
+import urllib.parse
+import boto3
+
+
+print('Loading function')
+
+s3 = boto3.client('s3')
+
+
+def lambda_handler(event, context):
+
+    # Get the object from the event 
+    bucket = event['Records'][0]['s3']['bucket']['name']
+    key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')
+    try:
+        response = s3.get_object(Bucket=bucket, Key=key)
+        print("--------------****----------------------")
+        print("FILE KEY: ",key)
+        tcontent = response['Body'].read().decode('utf-8')
+        print(tcontent)
+        blob = TextBlob(tcontent)
+        print(blob.polarity)
+        print("--------------****----------------------")
+        print(" ")
+        if blob.polarity < 0:
+            d_path = '/tmp/{}'.format(key)
+            s3.download_file(bucket, key, d_path)
+            print("Download done, d_path: ",d_path)
+            s3.upload_file(d_path, 'dan-highp-bucket', key)
+            print("Upload done !")
+            return "New file in High Priority Folder"
+    except Exception as e:
+        print(e)
+        print('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(key, bucket))
+        raise e
