@@ -31,7 +31,7 @@ def handler(event, context):
             d_path = '/tmp/{}'.format(key)
             s3.download_file(bucket, key, d_path)
             print("Download done, d_path: ",d_path)
-            s3.upload_file(d_path, 'highpriority-customer-feedback', key)
+            s3.upload_file(d_path, **your bucket path **, key)
             print("Upload done !")
             return "New file in High Priority Folder"
     except Exception as e:
